@@ -6,6 +6,15 @@ This is the DeepSeek Harness equivalent of `services/harness_framework`: templat
 
 ## Install
 
+`lib/` is a build artifact and is not tracked, so build the package first (and again after pulling changes):
+
+```sh
+pnpm install
+pnpm build
+```
+
+Then add it to a profile:
+
 ```sh
 cd services/deepseek-harness
 pnpm dsh plugin --profile <profile> add ../dsh-pipeline
