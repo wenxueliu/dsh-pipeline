@@ -1,0 +1,10 @@
+# dsh-pipeline: versioned pipeline templates and durable DAG runs over subagents.
+# The service owns the template catalog and run scheduler; the tools row exposes
+# it to the model. Both rows load only in profiles that install this bundle.
+
+- insert:
+    - id: pipeline
+      name: dsh-pipeline
+
+    - id: pipeline-tools
+      name: dsh-pipeline/tools

@@ -1,0 +1,247 @@
+/*
+ * Stylesheet for the pipeline panel and its Session-header entry. The build
+ * embeds this file in the bundle's `meta().stylesheets`. Colors come from theme
+ * aliases so light and dark themes stay consistent; class names are prefixed
+ * because the sheet is global.
+ */
+.dsh-pipeline-root {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 10px;
+  overflow: auto;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 1.4;
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.dsh-pipeline-empty {
+  margin: 0;
+  padding: 8px 2px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13px;
+}
+
+.dsh-pipeline-runs,
+.dsh-pipeline-tasks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dsh-pipeline-runs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dsh-pipeline-run {
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: var(--dsw-radius-md);
+  overflow: hidden;
+}
+
+.dsh-pipeline-runHeader {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dsh-pipeline-runHeader:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) {
+  .dsh-pipeline-runHeader:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+.dsh-pipeline-chevron {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+  transition: transform 120ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsh-pipeline-chevron {
+    transition: none;
+  }
+}
+
+.dsh-pipeline-runHeader[aria-expanded='true'] .dsh-pipeline-chevron {
+  transform: rotate(90deg);
+}
+
+.dsh-pipeline-runTitle {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-pipeline-runMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dsh-pipeline-status[data-status='running'],
+.dsh-pipeline-task[data-status='in_progress'] .dsh-pipeline-taskIcon {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.dsh-pipeline-status[data-status='succeeded'] {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.dsh-pipeline-status[data-status='failed'],
+.dsh-pipeline-task[data-status='failed'] .dsh-pipeline-taskIcon {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.dsh-pipeline-status[data-status='aborted'] {
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+.dsh-pipeline-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 10px 8px;
+  border-top: 1px solid var(--dsw-alias-border-l1);
+}
+
+.dsh-pipeline-task {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+
+.dsh-pipeline-taskIcon {
+  display: inline-flex;
+  flex: none;
+  color: var(--dsw-alias-state-idle-primary);
+}
+
+.dsh-pipeline-task[data-status='done'] .dsh-pipeline-taskIcon {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.dsh-pipeline-taskTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-pipeline-task[data-status='skipped'] .dsh-pipeline-taskTitle,
+.dsh-pipeline-task[data-status='pending'] .dsh-pipeline-taskTitle {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.dsh-pipeline-duration {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dsh-pipeline-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-left: 22px;
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.dsh-pipeline-output {
+  grid-column: 1 / -1;
+  padding-left: 22px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+}
+
+.dsh-pipeline-output > summary {
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+
+.dsh-pipeline-output > summary:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.dsh-pipeline-output > pre {
+  box-sizing: border-box;
+  max-height: 200px;
+  margin: 4px 0 2px;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-2);
+  font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l1);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l1);
+}
+
+.dsh-pipeline-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 28px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.dsh-pipeline-button:focus-visible {
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+@media (hover: hover) {
+  .dsh-pipeline-button:hover {
+    color: var(--dsw-alias-label-secondary);
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+.dsh-pipeline-button[data-active='true'] {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.dsh-pipeline-button svg {
+  flex: none;
+}
