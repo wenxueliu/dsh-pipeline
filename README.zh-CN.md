@@ -2,9 +2,13 @@
 
 [English](README.md) | 简体中文
 
-面向 DeepSeek Harness 的持久化 DAG 编排。带版本的流水线模板以 subagent 方式执行，run 状态归属于启动该 run 的 Session。
+面向 DeepSeek Harness 的持久化 DAG 编排。带版本的流水线模板中，每个步骤都在独立的新会话中执行；run 状态归属于启动该 run 的 Session。
 
-这是 `services/harness_framework` 在 DeepSeek Harness 中的对应实现：模板（templates）、实例（runs）与带依赖调度的任务（tasks）。执行走 `ctx.subagents`，而不是独立的 ACP daemon。
+## 相关项目
+
+dsh-pipeline 是 [harness_framework](https://github.com/wenxueliu/harness_framework) 在 DeepSeek Harness 上的移植：同一套模型——带版本的模板（templates）、实例（runs）与带依赖调度的任务（tasks），每个任务都是一个独立的新会话。
+
+区别在执行方式。harness_framework 通过 ACP 或命令拉起 Codex、Claude Code 并取回结果；这里任务选择一个注册在宿主上的会话 provider：`spawn` 创建纯进程内的新会话，而 `acp`、`codex`、`claude-code` 等 ACP provider 会拉起外部 agent 并取回文本。会话默认继承调用方的模型，任务可以用 `model` 覆盖。
 
 ## 安装
 
@@ -28,11 +32,11 @@ bundle patch 会插入两行：`pipeline`（即 `ctx.pipelines` 服务）和 `pi
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `defaultProvider` | `spawn` | 未指定 `agent` 的任务所使用的 subagent provider |
+| `defaultProvider` | `spawn` | 未指定 `agent` 的任务所使用的会话 provider |
 | `maxConcurrentTasks` | `4` | 同时执行的任务数 |
 | `taskTimeoutMs` | `7_200_000` | 单个任务的墙钟时间上限 |
 
-在 `cordis.yml` 的 `pipeline` 行上设置这些字段。模板中指定的 provider 必须在宿主上注册，否则 `startRun` 会在任何任务开始前以 `PIPELINE_PROVIDER_UNAVAILABLE` 失败。
+在 `cordis.yml` 的 `pipeline` 行上设置这些字段。模板中指定的 provider 必须在宿主上注册，否则 `startRun` 会在任何任务开始前以 `PIPELINE_PROVIDER_UNAVAILABLE` 失败。`defaultProvider` 指定这个已注册的会话 provider：`spawn` 是纯新会话后端，ACP provider 会拉起外部 agent（Codex、Claude Code）并交换文本。在不支持模型覆盖的 provider 上指定 `model`，会以 `PIPELINE_CAPABILITY_UNAVAILABLE` 失败。
 
 ## 工具
 
@@ -45,6 +49,8 @@ bundle patch 会插入两行：`pipeline`（即 `ctx.pipelines` 服务）和 `pi
 ```json
 { "do": "...", "input": { "params": { }, "upstream": { "<taskId>": "<output>" } }, "output": "..." }
 ```
+
+任务还可以用 `agent` 选择不同的已注册 provider，用 `model` 指定该会话使用的模型；两者都可省略，省略时使用流水线默认 provider 并继承调用方的模型。
 
 ## 状态
 
@@ -67,9 +73,9 @@ run 会以 `plugin:dsh-pipeline/run`、`/task` 和 `/status` 记录追加到所�
 ## 已知限制
 
 - 没有重试、审批、输出校验、失败回滚、暂停/恢复，也没有 fan-in 模式。失败的任务会跳过其传递依赖；这就是全部失败策略。
-- 任务作为调用方 agent 根节点的 subagent 执行，使用 `delivery: 'caller'`：不会有完成通知到达模型，因此进度只能轮询。
+- 任务作为调用方 agent 根节点的子会话执行，使用 `delivery: 'caller'`：不会有完成通知到达模型，因此进度只能轮询。
 - 进程停止时仍处于 `running` 的 run，从工具侧读回来会是 `interrupted`。它永远不会恢复；`abort` 会通过把剩余任务记为 skipped、把 run 记为 `aborted` 来关闭它。Web 面板读取的 projection 不携带存活信息，因此这类 run 在 `abort` 记录终态之前会一直显示为 running。
 - 面板是只读的：没有 abort 控件，也没有进入任务子 Session 的链接，并且显示每个任务的最终 `output`，而不是子 Session 的实时流。
 - `plugin:` 记录在 Session 格式迁移之间是尽力而为的；run 历史不是持久审计日志。
-- 外部 provider（`acp`、`codex`、`claude-code`）在此处只接受纯文本进出；基于能力的选项（`outputSchema`、`agentOptions`、presets）不会传递。
+- 外部 provider（`acp`、`codex`、`claude-code`）在此处只接受纯文本进出。唯一透传的能力选项是任务的 `model`（经 `agentOptions`），且只发给声明支持该能力的 provider；`outputSchema`、presets 及其余 agent options 不会传递。
 - 插件位于 `packages/` 之外，因此 harness 的覆盖率、快照与文档门禁不覆盖它。

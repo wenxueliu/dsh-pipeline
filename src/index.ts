@@ -180,11 +180,18 @@ export class PipelineService extends Service {
     }
     const runProvider = request.agent ?? this.resolved.defaultProvider
     for (const task of version.tasks) {
-      const provider = task.agent ?? runProvider
-      if (this.ctx.subagents.getProvider(provider) === undefined) {
+      const name = task.agent ?? runProvider
+      const provider = this.ctx.subagents.getProvider(name)
+      if (provider === undefined) {
         throw new PipelineError(
-          `no subagent provider "${provider}" is registered${task.agent === undefined ? ' as the pipeline default' : ` for task "${task.id}"`}`,
+          `no subagent provider "${name}" is registered${task.agent === undefined ? ' as the pipeline default' : ` for task "${task.id}"`}`,
           'PIPELINE_PROVIDER_UNAVAILABLE',
+        )
+      }
+      if (task.model !== undefined && !provider.capabilities.agentOptions) {
+        throw new PipelineError(
+          `subagent provider "${name}" cannot override the model for task "${task.id}"`,
+          'PIPELINE_CAPABILITY_UNAVAILABLE',
         )
       }
     }
@@ -300,6 +307,7 @@ export class PipelineService extends Service {
       parent: root,
       prompt: [{ type: 'text', text: prompt }],
       signal: taskSignal,
+      ...task.model === undefined ? {} : { agentOptions: { model: task.model } },
     })
     started(activation.childId)
     try {

@@ -14,6 +14,7 @@ export const taskDefinitionSchema = z.object({
   do: z.string().trim().min(1).max(4000),
   depends_on: z.array(z.string().trim().min(1).max(80)).max(63).optional(),
   agent: z.string().trim().min(1).max(80).optional(),
+  model: z.string().trim().min(1).max(120).optional(),
   output: z.string().trim().min(1).max(400).optional(),
 }).strict()
 

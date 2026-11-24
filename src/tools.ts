@@ -61,6 +61,7 @@ const TASK_ITEM_SCHEMA = {
     do: { type: 'string', required: true, description: 'Work the child agent must perform, stated as an instruction.' },
     depends_on: { type: 'array', items: { type: 'string' }, description: 'Task ids that must finish before this task starts.' },
     agent: { type: 'string', description: 'Subagent provider for this task; omit to use the pipeline default.' },
+    model: { type: 'string', description: 'Model for this task\'s child session; omit to inherit the caller\'s model.' },
     output: { type: 'string', description: 'Expected artifact, passed to the child as guidance.' },
   },
 } as const
@@ -74,7 +75,7 @@ export function apply(ctx: Context): void {
     name: 'pipeline_template',
     description: [
       'Create, list, or read durable DAG pipeline templates.',
-      'A template is a named task graph; each task runs as a subagent and may depend on earlier tasks.',
+      'A template is a named task graph; each task runs in its own Session and may depend on earlier tasks.',
       'create without template_id starts a new template. create with template_id appends a new version and leaves earlier versions intact.',
       'Templates persist across sessions; prefer appending a version over creating a duplicate template when revising a pipeline.',
     ].join(' '),
@@ -100,6 +101,7 @@ export function apply(ctx: Context): void {
         do: task.do,
         ...task.depends_on === undefined ? {} : { depends_on: task.depends_on },
         ...task.agent === undefined ? {} : { agent: task.agent },
+        ...task.model === undefined ? {} : { model: task.model },
         ...task.output === undefined ? {} : { output: task.output },
       }))
       return ctx.pipelines.createTemplate({

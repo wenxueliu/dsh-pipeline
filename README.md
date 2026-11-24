@@ -2,9 +2,13 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Durable DAG orchestration for the DeepSeek Harness. Versioned pipeline templates executed as subagents, with run state owned by the Session that started the run.
+Durable DAG orchestration for the DeepSeek Harness. Every step of a versioned pipeline template runs in its own Session, and run state is owned by the Session that started the run.
 
-This is the DeepSeek Harness equivalent of `services/harness_framework`: templates, instances (runs), and tasks with dependency scheduling. Execution goes through `ctx.subagents` instead of a separate ACP daemon.
+## Background
+
+dsh-pipeline is the DeepSeek Harness port of [harness_framework](https://github.com/wenxueliu/harness_framework): the same model of versioned templates, instances (runs), and tasks with dependency scheduling, where every task is an independent Session.
+
+Execution is what differs. harness_framework launches Codex or Claude Code over ACP or a command and collects the result; here a task selects a Session provider registered on the host. `spawn` creates a plain new in-process Session, while ACP-backed providers such as `acp`, `codex`, and `claude-code` launch an external agent and return its text. A task's Session inherits the caller's model unless the task sets `model`.
 
 ## Install
 
@@ -28,11 +32,11 @@ The bundle patch adds two rows: `pipeline` (the `ctx.pipelines` service) and `pi
 
 | field | default | meaning |
 |---|---|---|
-| `defaultProvider` | `spawn` | Subagent provider for tasks without an `agent` |
+| `defaultProvider` | `spawn` | Session provider for tasks without an `agent` |
 | `maxConcurrentTasks` | `4` | Tasks executing at once |
 | `taskTimeoutMs` | `7_200_000` | Per-task wall-clock limit |
 
-Set these on the `pipeline` row in `cordis.yml`. Providers named in a template must be registered on the host, otherwise `startRun` fails with `PIPELINE_PROVIDER_UNAVAILABLE` before any task starts.
+Set these on the `pipeline` row in `cordis.yml`. Providers named in a template must be registered on the host, otherwise `startRun` fails with `PIPELINE_PROVIDER_UNAVAILABLE` before any task starts. `defaultProvider` names that registered Session provider: `spawn` is the plain new-Session backend, while ACP-backed providers launch an external agent (Codex, Claude Code) and exchange text. Naming `model` on a provider without model support fails with `PIPELINE_CAPABILITY_UNAVAILABLE`.
 
 ## Tools
 
@@ -45,6 +49,8 @@ Each task prompt is JSON shaped like harness_framework's:
 ```json
 { "do": "...", "input": { "params": { }, "upstream": { "<taskId>": "<output>" } }, "output": "..." }
 ```
+
+A task may also set `agent` to pick a different registered provider and `model` to run that Session on another model. Both are optional: without them the task uses the pipeline default provider and inherits the caller's model.
 
 ## State
 
@@ -67,9 +73,9 @@ Client sources live in `src/client/` (React + TSX). The host program excludes th
 ## Known limitations
 
 - No retry, approval, output validation, failure rollback, pause/resume, or fan-in modes. A failed task skips its transitive dependents; that is the whole failure policy.
-- Tasks execute as subagents of the calling agent's root, with `delivery: 'caller'`: no completion notification reaches the model, so progress is poll-only.
+- Tasks execute as child Sessions of the calling agent's root, with `delivery: 'caller'`: no completion notification reaches the model, so progress is poll-only.
 - A run that was still `running` when the process stopped reads back as `interrupted` from the tools. It never resumes; `abort` closes it by recording the remaining tasks as skipped and the run as `aborted`. The Web panel reads the projection, which carries no liveness, so such a run keeps showing as running there until `abort` records the terminal state.
 - The panel is read-only: it has no abort control and no link into a task's child Session, and it shows each task's final `output` rather than the child Session's stream.
 - `plugin:` records are best-effort across Session-format migrations; run history is not a durable audit log.
-- External providers (`acp`, `codex`, `claude-code`) only accept plain text in and out here; capability-based options (`outputSchema`, `agentOptions`, presets) are not passed.
+- External providers (`acp`, `codex`, `claude-code`) only accept plain text in and out here. The only capability-based option passed is a task's `model`, through `agentOptions`, and only to providers that declare support; `outputSchema`, presets, and the remaining agent options are not passed.
 - The plugin lives outside `packages/`, so the harness's coverage, snapshot, and documentation gates do not cover it.

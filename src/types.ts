@@ -18,6 +18,8 @@ export type TaskDefinition = {
   depends_on?: string[] | undefined
   /** Subagent provider override; the run or plugin default fills the gap. */
   agent?: string | undefined
+  /** Model override for this task's child Session; omitted inherits the caller's model. */
+  model?: string | undefined
   /** Expected artifact, passed to the child as a hint. */
   output?: string | undefined
 }

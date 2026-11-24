@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateTemplate } from '../src/templates.ts'
+import { taskDefinitionSchema, validateTemplate } from '../src/templates.ts'
 import type { TaskDefinition } from '../src/types.ts'
 
 const task = (id: string, depends_on?: string[]): TaskDefinition => ({
@@ -31,5 +31,16 @@ describe('validateTemplate', () => {
 
   it('rejects a cycle', () => {
     expect(validateTemplate([task('a', ['b']), task('b', ['c']), task('c', ['a'])])).toContain('dependency cycle')
+  })
+})
+
+describe('taskDefinitionSchema', () => {
+  it('keeps a per-task model', () => {
+    const parsed = taskDefinitionSchema.parse({ id: 'a', do: 'work', model: 'gpt-5-codex' })
+    expect(parsed.model).toBe('gpt-5-codex')
+  })
+
+  it('rejects a blank model', () => {
+    expect(() => taskDefinitionSchema.parse({ id: 'a', do: 'work', model: '  ' })).toThrow()
   })
 })

@@ -11,6 +11,7 @@ export type PipelineErrorCode =
   | 'PIPELINE_TEMPLATE_NOT_FOUND'
   | 'PIPELINE_RUN_NOT_FOUND'
   | 'PIPELINE_PROVIDER_UNAVAILABLE'
+  | 'PIPELINE_CAPABILITY_UNAVAILABLE'
 
 /** Typed error for pipeline failures. */
 export class PipelineError extends HarnessError {
