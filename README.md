@@ -1,5 +1,7 @@
 # dsh-pipeline
 
+English | [简体中文](README.zh-CN.md)
+
 Durable DAG orchestration for the DeepSeek Harness. Versioned pipeline templates executed as subagents, with run state owned by the Session that started the run.
 
 This is the DeepSeek Harness equivalent of `services/harness_framework`: templates, instances (runs), and tasks with dependency scheduling. Execution goes through `ctx.subagents` instead of a separate ACP daemon.
@@ -60,7 +62,7 @@ The package also ships a browser half (`exports["./client"]`, declared through `
 
 Data flows through the existing `pipeline` Session projection; the browser bundle registers into slots and reads `useProjection('pipeline')`, so no polling reaches the server. UI copy is locale-owned (`dsh-pipeline` namespace, `zh` and `en`).
 
-Client sources live in `src/client/` (React + TSX). The host program excludes that directory; `tsconfig.client.json` type-checks it with DOM and JSX, and `scripts/build-client.mjs` bundles it with esbuild into the single `lib/client.js` that the web host serves at `/plugins/dsh-pipeline/client.js`. `pnpm build` runs both `tsc` and that script; `pnpm typecheck` checks all three programs.
+Client sources live in `src/client/` (React + TSX). The host program excludes that directory; `tsconfig.client.json` type-checks it with DOM and JSX, and `scripts/build-client.mjs` bundles it with esbuild into the single `lib/client.js` that the web host serves from the plugin's `/plugins/` resource path. `pnpm build` runs both `tsc` and that script; `pnpm typecheck` checks all three programs.
 
 ## Known limitations
 
